@@ -23,12 +23,12 @@ body {
 }
 
 .container {
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 15px;
     padding: 30px;
     margin: 40px auto;
     max-width: 800px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
 }
 
 h1 {
@@ -47,7 +47,7 @@ h3 {
 }
 
 button, .stButton>button {
-    background: #ff758c;
+    background: #4285F4;
     border: none;
     border-radius: 8px;
     padding: 10px 20px;
@@ -58,7 +58,7 @@ button, .stButton>button {
 }
 
 button:hover, .stButton>button:hover {
-    background: #ff5f7e;
+    background: #3367D6;
 }
 
 input, textarea {
@@ -75,7 +75,7 @@ input, textarea {
 """
 st.markdown(dark_css, unsafe_allow_html=True)
 
-# Advanced mode additional CSS (different dark gradient and fade-in animation)
+# Advanced mode additional CSS with a different dark gradient and fade-in animation.
 advanced_css = """
 <style>
 body.advanced-mode {
@@ -88,22 +88,8 @@ body.advanced-mode {
     from { opacity: 0; }
     to { opacity: 1; }
 }
-
-/* Negative sentiment shake animation */
-@keyframes shake {
-  0% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  50% { transform: translateX(5px); }
-  75% { transform: translateX(-5px); }
-  100% { transform: translateX(0); }
-}
-.shake {
-    display: inline-block;
-    animation: shake 0.5s;
-}
 </style>
 """
-
 st.markdown(advanced_css, unsafe_allow_html=True)
 
 # Sidebar: Memory usage indicator and manual buttons with transient notifications.
@@ -134,7 +120,7 @@ display_sidebar_controls()
 if 'last_mode' not in st.session_state:
     st.session_state.last_mode = "Basic (Sentiment Analysis)"
 
-# Sidebar: select mode (Basic vs. Advanced).
+# Sidebar: select mode (Basic vs. Advanced)
 mode = st.sidebar.radio("Select Mode", ["Basic (Sentiment Analysis)", "Advanced (Emotion Detection)"])
 
 # Automatically clear cache and notify if mode has changed.
@@ -157,7 +143,7 @@ if mode == "Advanced (Emotion Detection)":
         st.session_state.last_mode = mode
         st.sidebar.success("Memory cleared automatically due to mode switch.")
 
-# If Advanced mode, add a class to the body via JS.
+# If Advanced mode, add a class to the body via JS for additional styling.
 if mode == "Advanced (Emotion Detection)":
     st.markdown(
         """
@@ -218,20 +204,28 @@ with st.container():
                     confidence = result[0]['score']
                     
                     # Generate dynamic messages based on predicted label and confidence.
+                    dynamic_msg = ""
                     if predicted_label.upper() == "POSITIVE":
-                        dynamic_msg = "Absolutely glowing! The positive energy is off the charts!"
-                        st.balloons()  # Positive animation
+                        st.balloons()  # Celebratory animation.
+                        if confidence >= 0.90:
+                            dynamic_msg = "Absolutely glowing! The positive energy is off the charts!"
+                        elif confidence >= 0.75:
+                            dynamic_msg = "Clearly positive sentiment. Great vibes ahead!"
+                        else:
+                            dynamic_msg = "Positive sentiment, though a bit tentative."
                     elif predicted_label.upper() == "NEGATIVE":
-                        # Use gradient text with a shake animation for negative sentiment.
-                        dynamic_msg = (
-                            "<span class='shake' style='"
-                            "background: linear-gradient(90deg, #3a7bd5, #3a6073);"
-                            "-webkit-background-clip: text; -webkit-text-fill-color: transparent;'>"
-                            "Extremely negative sentiment. That's quite disheartening."
-                            "</span>"
-                        )
+                        st.snow()  # Use st.snow() for negative sentiment.
+                        if confidence >= 0.90:
+                            dynamic_msg = "Extremely negative sentiment. That's quite disheartening."
+                        elif confidence >= 0.75:
+                            dynamic_msg = "Clearly negative sentiment. Something might be off."
+                        else:
+                            dynamic_msg = "Negative sentiment, but not overwhelmingly so."
                     elif predicted_label.upper() == "NEUTRAL":
-                        dynamic_msg = "The text is balanced and neutral."
+                        if confidence >= 0.80:
+                            dynamic_msg = "Strongly neutral. The text is very balanced."
+                        else:
+                            dynamic_msg = "Somewhat neutral. There's a hint of emotion."
                     else:
                         dynamic_msg = "The sentiment is interesting!"
                     
