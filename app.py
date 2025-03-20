@@ -1,5 +1,5 @@
 import streamlit as st
-from transformers import pipeline, PipelineException
+from transformers import pipeline
 
 @st.cache_resource(show_spinner=False)
 def load_sentiment_pipeline():
@@ -34,7 +34,5 @@ if st.button("Analyze"):
                 st.write("Confidence Score:", result[0]["score"])
             else:
                 st.error("Unexpected response format from the model.")
-        except PipelineException as pe:
-            st.error(f"Pipeline error: {pe}")
         except Exception as e:
             st.error(f"An unexpected error occurred: {e}")
