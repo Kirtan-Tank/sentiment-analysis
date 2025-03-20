@@ -8,7 +8,7 @@ try:
 except ImportError:
     psutil = None
 
-# New dark theme CSS using Montserrat and a dark gradient background with card-like containers.
+# New dark theme CSS using Montserrat with a dark gradient background and card-style containers.
 dark_css = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
@@ -23,12 +23,12 @@ body {
 }
 
 .container {
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.7);
     border-radius: 15px;
     padding: 30px;
     margin: 40px auto;
     max-width: 800px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.6);
 }
 
 h1 {
@@ -75,7 +75,7 @@ input, textarea {
 """
 st.markdown(dark_css, unsafe_allow_html=True)
 
-# Advanced mode additional CSS with a different dark gradient and fade-in
+# Advanced mode additional CSS (different dark gradient and fade-in animation)
 advanced_css = """
 <style>
 body.advanced-mode {
@@ -88,10 +88,25 @@ body.advanced-mode {
     from { opacity: 0; }
     to { opacity: 1; }
 }
+
+/* Negative sentiment shake animation */
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+  100% { transform: translateX(0); }
+}
+.shake {
+    display: inline-block;
+    animation: shake 0.5s;
+}
 </style>
 """
 
-# Sidebar: Memory usage indicator and manual buttons with transient notifications
+st.markdown(advanced_css, unsafe_allow_html=True)
+
+# Sidebar: Memory usage indicator and manual buttons with transient notifications.
 def display_sidebar_controls():
     if psutil:
         memory_usage = psutil.virtual_memory().percent
@@ -115,20 +130,20 @@ def display_sidebar_controls():
 
 display_sidebar_controls()
 
-# Use session state to track the last selected mode
+# Use session state to track the last selected mode.
 if 'last_mode' not in st.session_state:
     st.session_state.last_mode = "Basic (Sentiment Analysis)"
 
-# Sidebar: select mode (Basic vs. Advanced)
+# Sidebar: select mode (Basic vs. Advanced).
 mode = st.sidebar.radio("Select Mode", ["Basic (Sentiment Analysis)", "Advanced (Emotion Detection)"])
 
-# Automatically clear cache and notify if mode has changed
+# Automatically clear cache and notify if mode has changed.
 if st.session_state.last_mode != mode:
     st.cache_resource.clear()
     st.session_state.last_mode = mode
     st.sidebar.success("Memory cleared automatically due to mode change.")
 
-# For Advanced mode, add password protection and automatically clear cache upon success
+# For Advanced mode, add password protection and automatically clear cache upon success.
 if mode == "Advanced (Emotion Detection)":
     adv_password = st.sidebar.text_input("Enter password for advanced mode", type="password")
     if adv_password == "advanced123":
@@ -142,9 +157,8 @@ if mode == "Advanced (Emotion Detection)":
         st.session_state.last_mode = mode
         st.sidebar.success("Memory cleared automatically due to mode switch.")
 
-# If Advanced mode, inject additional CSS and add a class to the body via JS
+# If Advanced mode, add a class to the body via JS.
 if mode == "Advanced (Emotion Detection)":
-    st.markdown(advanced_css, unsafe_allow_html=True)
     st.markdown(
         """
         <script>
@@ -154,7 +168,7 @@ if mode == "Advanced (Emotion Detection)":
         unsafe_allow_html=True,
     )
 
-# Load the appropriate sentiment analysis pipeline based on the mode
+# Load the appropriate sentiment analysis pipeline based on the mode.
 @st.cache_resource(show_spinner=False)
 def load_pipeline(selected_mode):
     try:
@@ -170,7 +184,7 @@ def load_pipeline(selected_mode):
 
 sentiment_pipeline, used_model = load_pipeline(mode)
 
-# Create a container for the main UI (modern card-like look)
+# Create a container for the main UI with a modern card-like appearance.
 with st.container():
     if mode == "Advanced (Emotion Detection)":
         st.markdown("<h1 class='fade-in'>SentiAnalyze: Advanced Emotion Detection</h1>", unsafe_allow_html=True)
@@ -178,7 +192,7 @@ with st.container():
         st.markdown("<h1>SentiAnalyze: Basic Sentiment Analysis</h1>", unsafe_allow_html=True)
     st.markdown("<h3>Analyze sentiment with style and precision</h3>", unsafe_allow_html=True)
     
-    # Offer a button to display available classes in both modes
+    # Offer a button to display available classes in both modes.
     if st.sidebar.button("Show Available Classes"):
         try:
             classes = sentiment_pipeline.model.config.id2label
@@ -188,7 +202,7 @@ with st.container():
         except Exception as e:
             st.sidebar.error(f"Error fetching classes: {e}")
     
-    # Main UI: text input for analysis
+    # Main UI: text input for analysis.
     user_input = st.text_area("Enter text for analysis:")
     
     if st.button("Analyze"):
@@ -203,13 +217,19 @@ with st.container():
                     predicted_label = result[0]['label']
                     confidence = result[0]['score']
                     
-                    # Generate dynamic message templates based on confidence and label
+                    # Generate dynamic messages based on predicted label and confidence.
                     if predicted_label.upper() == "POSITIVE":
                         dynamic_msg = "Absolutely glowing! The positive energy is off the charts!"
-                        st.balloons()  # celebratory animation
+                        st.balloons()  # Positive animation
                     elif predicted_label.upper() == "NEGATIVE":
-                        dynamic_msg = "Extremely negative sentiment. That's quite disheartening."
-                        st.snow()  # somber, falling snow animation as a proxy for sadness
+                        # Use gradient text with a shake animation for negative sentiment.
+                        dynamic_msg = (
+                            "<span class='shake' style='"
+                            "background: linear-gradient(90deg, #3a7bd5, #3a6073);"
+                            "-webkit-background-clip: text; -webkit-text-fill-color: transparent;'>"
+                            "Extremely negative sentiment. That's quite disheartening."
+                            "</span>"
+                        )
                     elif predicted_label.upper() == "NEUTRAL":
                         dynamic_msg = "The text is balanced and neutral."
                     else:
