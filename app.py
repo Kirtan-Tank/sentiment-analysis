@@ -76,7 +76,7 @@ body.advanced-mode {
 </style>
 """
 
-# Sidebar: Memory usage indicator and manual buttons for reload/clear
+# Sidebar: Memory usage indicator and manual buttons
 def display_sidebar_controls():
     if psutil:
         memory_usage = psutil.virtual_memory().percent
@@ -90,37 +90,38 @@ def display_sidebar_controls():
     
     if st.sidebar.button("Reload App"):
         st.cache_resource.clear()
-        st.info("Cache cleared. Please reload your browser to apply changes.")
+        st.sidebar.info("Cache cleared. Please reload your browser to apply changes.")
 
 display_sidebar_controls()
 
 # Use session state to track the last selected mode
 if 'last_mode' not in st.session_state:
-    st.session_state.last_mode = None
+    st.session_state.last_mode = "Basic (Sentiment Analysis)"
 
 # Sidebar: select mode (Basic vs. Advanced)
 mode = st.sidebar.radio("Select Mode", ["Basic (Sentiment Analysis)", "Advanced (Emotion Detection)"])
 
-# If mode has changed, clear cache and instruct the user to reload
+# Automatically clear cache and notify if mode has changed
 if st.session_state.last_mode != mode:
     st.cache_resource.clear()
     st.session_state.last_mode = mode
-    st.sidebar.warning("Mode change detected. Please clear memory and reload your browser.")
-    st.stop()  # Stop execution so the user can reload manually
+    st.sidebar.success("Memory cleared automatically due to mode change.")
 
-# For Advanced mode, add password protection
+# For Advanced mode, add password protection; clear cache automatically upon success
 if mode == "Advanced (Emotion Detection)":
     adv_password = st.sidebar.text_input("Enter password for advanced mode", type="password")
-    if adv_password != "advanced123":
-        st.sidebar.error("Incorrect password. Advanced mode is locked.")
+    if adv_password == "advanced123":
+        st.sidebar.success("Advanced mode unlocked!")
+        st.cache_resource.clear()
+        st.sidebar.success("Memory cleared automatically upon unlocking advanced mode.")
+    else:
+        st.sidebar.error("Incorrect password. Advanced mode is locked. Switching to Basic mode.")
         mode = "Basic (Sentiment Analysis)"
-        st.sidebar.warning("Switching to Basic mode.")
         st.cache_resource.clear()
         st.session_state.last_mode = mode
-        st.sidebar.info("Cache cleared. Please reload your browser to apply changes.")
-        st.stop()
+        st.sidebar.success("Memory cleared automatically due to mode switch.")
 
-# If advanced mode, inject additional CSS and add a class to the body via JS
+# If Advanced mode, inject additional CSS and add a class to the body via JS
 if mode == "Advanced (Emotion Detection)":
     st.markdown(advanced_css, unsafe_allow_html=True)
     st.markdown(
@@ -148,7 +149,7 @@ def load_pipeline(selected_mode):
 
 sentiment_pipeline, used_model = load_pipeline(mode)
 
-# Display current mode in the title with an animated header for advanced mode
+# Display current mode in the title with an animated header for Advanced mode
 if mode == "Advanced (Emotion Detection)":
     st.markdown("<h1 class='fade-in'>SentiAnalyze: Advanced Emotion Detection</h1>", unsafe_allow_html=True)
 else:
