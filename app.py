@@ -1,5 +1,6 @@
 import streamlit as st
 from transformers import pipeline
+import time
 
 # Try importing psutil; if not available, set to None.
 try:
@@ -84,13 +85,20 @@ def display_sidebar_controls():
     else:
         st.sidebar.warning("psutil not installed. Memory usage unavailable.")
     
+    # Use st.empty() to display temporary notifications
+    clear_placeholder = st.sidebar.empty()
     if st.sidebar.button("Clear Memory"):
         st.cache_resource.clear()
-        st.sidebar.success("Memory cache cleared!")
+        clear_placeholder.success("Memory cache cleared!")
+        time.sleep(3)
+        clear_placeholder.empty()
     
+    reload_placeholder = st.sidebar.empty()
     if st.sidebar.button("Reload App"):
         st.cache_resource.clear()
-        st.sidebar.info("Cache cleared. Please reload your browser to apply changes.")
+        reload_placeholder.info("Cache cleared. Please reload your browser to apply changes.")
+        time.sleep(3)
+        reload_placeholder.empty()
 
 display_sidebar_controls()
 
@@ -106,8 +114,9 @@ if st.session_state.last_mode != mode:
     st.cache_resource.clear()
     st.session_state.last_mode = mode
     st.sidebar.success("Memory cleared automatically due to mode change.")
+    # No st.stop() here—just continue to reload the pipeline
 
-# For Advanced mode, add password protection; clear cache automatically upon success
+# For Advanced mode, add password protection and clear cache automatically upon success
 if mode == "Advanced (Emotion Detection)":
     adv_password = st.sidebar.text_input("Enter password for advanced mode", type="password")
     if adv_password == "advanced123":
@@ -167,6 +176,31 @@ if mode == "Advanced (Emotion Detection)":
         except Exception as e:
             st.sidebar.error(f"Error fetching emotion classes: {e}")
 
+# Function to generate dynamic messages based on predicted label and confidence
+def get_dynamic_message(label, score):
+    label = label.upper()
+    if label == "POSITIVE":
+        if score >= 0.90:
+            return "Absolutely glowing! The positive energy is off the charts!"
+        elif score >= 0.75:
+            return "Clearly positive sentiment. Great vibes ahead!"
+        else:
+            return "Positive sentiment, though a bit tentative."
+    elif label == "NEGATIVE":
+        if score >= 0.90:
+            return "Extremely negative sentiment. That's quite disheartening."
+        elif score >= 0.75:
+            return "Clearly negative sentiment. Something might be off."
+        else:
+            return "Negative sentiment, but not overwhelmingly so."
+    elif label == "NEUTRAL":
+        if score >= 0.80:
+            return "Strongly neutral. The text is very balanced."
+        else:
+            return "Somewhat neutral. There's a hint of emotion."
+    else:
+        return "The sentiment is interesting!"
+
 # Main UI: text input for analysis
 user_input = st.text_area("Enter text for analysis:")
 
@@ -179,10 +213,14 @@ if st.button("Analyze"):
         try:
             result = sentiment_pipeline(user_input)
             if result and isinstance(result, list) and "label" in result[0]:
+                predicted_label = result[0]['label']
+                confidence = result[0]['score']
+                dynamic_msg = get_dynamic_message(predicted_label, confidence)
                 st.markdown(f"""
                     <div style='text-align: center; font-size: 1.2rem;'>
-                        <strong>Predicted Label:</strong> {result[0]['label']}<br>
-                        <strong>Confidence Score:</strong> {result[0]['score']:.2f}
+                        <strong>Predicted Label:</strong> {predicted_label}<br>
+                        <strong>Confidence Score:</strong> {confidence:.2f}<br>
+                        <em>{dynamic_msg}</em>
                     </div>
                 """, unsafe_allow_html=True)
             else:
