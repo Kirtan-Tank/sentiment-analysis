@@ -46,34 +46,59 @@ h3 {
 """
 st.markdown(custom_css, unsafe_allow_html=True)
 
-# Updated app title and tagline
-st.markdown("<h1>SentiAnalyze: Unveil the Emotions</h1>", unsafe_allow_html=True)
+# Sidebar: select mode (Basic vs. Advanced)
+mode = st.sidebar.radio("Select Mode", ["Basic (Sentiment Analysis)", "Advanced (Emotion Detection)"])
+
+# Load the appropriate sentiment analysis pipeline based on the mode
+@st.cache_resource(show_spinner=False)
+def load_pipeline(selected_mode):
+    try:
+        if selected_mode == "Basic (Sentiment Analysis)":
+            model_name = "siebert/sentiment-roberta-large-english"
+        else:
+            model_name = "SamLowe/roberta-base-go_emotions"
+        pl = pipeline("sentiment-analysis", model=model_name, truncation=True)
+        return pl, model_name
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        return None, None
+
+sentiment_pipeline, used_model = load_pipeline(mode)
+
+# Display current mode in the title
+st.markdown(f"<h1>SentiAnalyze: {mode}</h1>", unsafe_allow_html=True)
 st.markdown("<h3>Analyze sentiment with style and precision</h3>", unsafe_allow_html=True)
 
-# Initialize the sentiment analysis pipeline with the chosen model
-sentiment_pipeline = pipeline(
-    "sentiment-analysis",
-    model="siebert/sentiment-roberta-large-english",
-    truncation=True  # ensures input texts are appropriately truncated
-)
+# In Advanced mode, offer a button to display available emotion classes
+if mode == "Advanced (Emotion Detection)":
+    if st.sidebar.button("Show Available Emotion Classes"):
+        try:
+            classes = sentiment_pipeline.model.config.id2label
+            st.sidebar.markdown("### Available Emotion Classes:")
+            for idx, label in classes.items():
+                st.sidebar.write(f"{idx}: {label}")
+        except Exception as e:
+            st.sidebar.error(f"Error fetching emotion classes: {e}")
 
-# Get user input
-user_input = st.text_area("Enter text for sentiment prediction:")
+# Main UI: text input for sentiment prediction
+user_input = st.text_area("Enter text for analysis:")
 
 if st.button("Analyze"):
-    if user_input.strip():
+    if not sentiment_pipeline:
+        st.error("The sentiment analysis model is unavailable.")
+    elif not user_input.strip():
+        st.warning("Please enter some text to analyze.")
+    else:
         try:
             result = sentiment_pipeline(user_input)
             if result and isinstance(result, list) and "label" in result[0]:
                 st.markdown(f"""
                     <div style='text-align: center; font-size: 1.2rem;'>
-                        <strong>Predicted Sentiment:</strong> {result[0]['label']}<br>
+                        <strong>Predicted Label:</strong> {result[0]['label']}<br>
                         <strong>Confidence Score:</strong> {result[0]['score']:.2f}
                     </div>
                 """, unsafe_allow_html=True)
             else:
                 st.error("Unexpected response format from the model.")
         except Exception as e:
-            st.error(f"An error occurred: {e}")
-    else:
-        st.warning("Please enter some text to analyze.")
+            st.error(f"An error occurred during analysis: {e}")
