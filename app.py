@@ -8,33 +8,34 @@ try:
 except ImportError:
     psutil = None
 
-# New modern custom CSS using Montserrat and a gradient background, with card-like containers.
-custom_css = """
+# New dark theme CSS using Montserrat and a dark gradient background with card-like containers.
+dark_css = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
 
 body {
     font-family: 'Montserrat', sans-serif;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: #ffffff;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #e0e0e0;
     transition: background 0.5s ease-in-out;
     margin: 0;
     padding: 0;
 }
 
 .container {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 15px;
     padding: 30px;
     margin: 40px auto;
     max-width: 800px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
 }
 
 h1 {
     font-size: 3rem;
     text-align: center;
     margin-bottom: 10px;
+    color: #ffffff;
 }
 
 h3 {
@@ -42,6 +43,7 @@ h3 {
     text-align: center;
     margin-bottom: 20px;
     font-weight: 400;
+    color: #cccccc;
 }
 
 button, .stButton>button {
@@ -66,16 +68,18 @@ input, textarea {
     border: none;
     border-radius: 8px;
     font-size: 1rem;
+    background: #333333;
+    color: #e0e0e0;
 }
 </style>
 """
-st.markdown(custom_css, unsafe_allow_html=True)
+st.markdown(dark_css, unsafe_allow_html=True)
 
-# Advanced mode additional CSS remains similar (we keep the fade-in and advanced background changes)
+# Advanced mode additional CSS with a different dark gradient and fade-in
 advanced_css = """
 <style>
 body.advanced-mode {
-    background: linear-gradient(135deg, #76b852, #8DC26F);
+    background: linear-gradient(135deg, #1f1c2c, #928dab);
 }
 .fade-in {
     animation: fadeIn 1s ease-in-out;
@@ -124,7 +128,7 @@ if st.session_state.last_mode != mode:
     st.session_state.last_mode = mode
     st.sidebar.success("Memory cleared automatically due to mode change.")
 
-# For Advanced mode, add password protection and automatically clear memory upon success
+# For Advanced mode, add password protection and automatically clear cache upon success
 if mode == "Advanced (Emotion Detection)":
     adv_password = st.sidebar.text_input("Enter password for advanced mode", type="password")
     if adv_password == "advanced123":
@@ -166,9 +170,8 @@ def load_pipeline(selected_mode):
 
 sentiment_pipeline, used_model = load_pipeline(mode)
 
-# Create a container for the main UI to apply the modern card look
+# Create a container for the main UI (modern card-like look)
 with st.container():
-    # Display current mode in the title with an animated header for Advanced mode
     if mode == "Advanced (Emotion Detection)":
         st.markdown("<h1 class='fade-in'>SentiAnalyze: Advanced Emotion Detection</h1>", unsafe_allow_html=True)
     else:
@@ -199,27 +202,16 @@ with st.container():
                 if result and isinstance(result, list) and "label" in result[0]:
                     predicted_label = result[0]['label']
                     confidence = result[0]['score']
-                    dynamic_msg = ""
+                    
                     # Generate dynamic message templates based on confidence and label
                     if predicted_label.upper() == "POSITIVE":
-                        if confidence >= 0.90:
-                            dynamic_msg = "Absolutely glowing! The positive energy is off the charts!"
-                        elif confidence >= 0.75:
-                            dynamic_msg = "Clearly positive sentiment. Great vibes ahead!"
-                        else:
-                            dynamic_msg = "Positive sentiment, though a bit tentative."
+                        dynamic_msg = "Absolutely glowing! The positive energy is off the charts!"
+                        st.balloons()  # celebratory animation
                     elif predicted_label.upper() == "NEGATIVE":
-                        if confidence >= 0.90:
-                            dynamic_msg = "Extremely negative sentiment. That's quite disheartening."
-                        elif confidence >= 0.75:
-                            dynamic_msg = "Clearly negative sentiment. Something might be off."
-                        else:
-                            dynamic_msg = "Negative sentiment, but not overwhelmingly so."
+                        dynamic_msg = "Extremely negative sentiment. That's quite disheartening."
+                        st.snow()  # somber, falling snow animation as a proxy for sadness
                     elif predicted_label.upper() == "NEUTRAL":
-                        if confidence >= 0.80:
-                            dynamic_msg = "Strongly neutral. The text is very balanced."
-                        else:
-                            dynamic_msg = "Somewhat neutral. There's a hint of emotion."
+                        dynamic_msg = "The text is balanced and neutral."
                     else:
                         dynamic_msg = "The sentiment is interesting!"
                     
