@@ -85,19 +85,18 @@ def display_sidebar_controls():
     else:
         st.sidebar.warning("psutil not installed. Memory usage unavailable.")
     
-    # Use st.empty() to display temporary notifications
     clear_placeholder = st.sidebar.empty()
     if st.sidebar.button("Clear Memory"):
         st.cache_resource.clear()
         clear_placeholder.success("Memory cache cleared!")
-        time.sleep(3)
+        time.sleep(1)
         clear_placeholder.empty()
     
     reload_placeholder = st.sidebar.empty()
     if st.sidebar.button("Reload App"):
         st.cache_resource.clear()
         reload_placeholder.info("Cache cleared. Please reload your browser to apply changes.")
-        time.sleep(3)
+        time.sleep(1)
         reload_placeholder.empty()
 
 display_sidebar_controls()
@@ -114,8 +113,7 @@ if st.session_state.last_mode != mode:
     st.cache_resource.clear()
     st.session_state.last_mode = mode
     st.sidebar.success("Memory cleared automatically due to mode change.")
-    # No st.stop() here—just continue to reload the pipeline
-
+    
 # For Advanced mode, add password protection and clear cache automatically upon success
 if mode == "Advanced (Emotion Detection)":
     adv_password = st.sidebar.text_input("Enter password for advanced mode", type="password")
@@ -158,23 +156,22 @@ def load_pipeline(selected_mode):
 
 sentiment_pipeline, used_model = load_pipeline(mode)
 
-# Display current mode in the title with an animated header for Advanced mode
+# Display current mode in the title with an animated header (if Advanced)
 if mode == "Advanced (Emotion Detection)":
     st.markdown("<h1 class='fade-in'>SentiAnalyze: Advanced Emotion Detection</h1>", unsafe_allow_html=True)
 else:
     st.markdown("<h1>SentiAnalyze: Basic Sentiment Analysis</h1>", unsafe_allow_html=True)
 st.markdown("<h3>Analyze sentiment with style and precision</h3>", unsafe_allow_html=True)
 
-# In Advanced mode, offer a button to display available emotion classes
-if mode == "Advanced (Emotion Detection)":
-    if st.sidebar.button("Show Available Emotion Classes"):
-        try:
-            classes = sentiment_pipeline.model.config.id2label
-            st.sidebar.markdown("### Available Emotion Classes:")
-            for idx, label in classes.items():
-                st.sidebar.write(f"{idx}: {label}")
-        except Exception as e:
-            st.sidebar.error(f"Error fetching emotion classes: {e}")
+# Offer a button to display available classes in both modes
+if st.sidebar.button("Show Available Classes"):
+    try:
+        classes = sentiment_pipeline.model.config.id2label
+        st.sidebar.markdown("### Available Classes:")
+        for idx, label in classes.items():
+            st.sidebar.write(f"{idx}: {label}")
+    except Exception as e:
+        st.sidebar.error(f"Error fetching classes: {e}")
 
 # Function to generate dynamic messages based on predicted label and confidence
 def get_dynamic_message(label, score):
