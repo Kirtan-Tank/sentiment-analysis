@@ -1,6 +1,11 @@
 import streamlit as st
 from transformers import pipeline
-import psutil
+
+# Try importing psutil; if not available, set to None.
+try:
+    import psutil
+except ImportError:
+    psutil = None
 
 # Base custom CSS for a clean, modern look
 base_css = """
@@ -73,16 +78,16 @@ body.advanced-mode {
 
 # Sidebar: Memory usage indicator and manual buttons for reload/clear
 def display_sidebar_controls():
-    # Display current memory usage
-    memory_usage = psutil.virtual_memory().percent
-    st.sidebar.metric("Memory Usage", f"{memory_usage}%")
+    if psutil:
+        memory_usage = psutil.virtual_memory().percent
+        st.sidebar.metric("Memory Usage", f"{memory_usage}%")
+    else:
+        st.sidebar.warning("psutil not installed. Memory usage unavailable.")
     
-    # Button to clear cached resources manually
     if st.sidebar.button("Clear Memory"):
         st.cache_resource.clear()
         st.sidebar.success("Memory cache cleared!")
     
-    # Reload button to clear cache and prompt a browser reload
     if st.sidebar.button("Reload App"):
         st.cache_resource.clear()
         st.info("Cache cleared. Please reload your browser to apply changes.")
