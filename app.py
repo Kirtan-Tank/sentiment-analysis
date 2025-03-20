@@ -70,8 +70,35 @@ body.advanced-mode {
 </style>
 """
 
+# Add a Reload button to clear caches and restart the app
+if st.sidebar.button("Reload App"):
+    st.cache_resource.clear()
+    st.experimental_rerun()
+
+# Use session state to track the last selected mode
+if 'last_mode' not in st.session_state:
+    st.session_state.last_mode = None
+
 # Sidebar: select mode (Basic vs. Advanced)
 mode = st.sidebar.radio("Select Mode", ["Basic (Sentiment Analysis)", "Advanced (Emotion Detection)"])
+
+# If mode has changed, clear cache and rerun to free memory
+if st.session_state.last_mode != mode:
+    st.cache_resource.clear()
+    st.session_state.last_mode = mode
+    st.experimental_rerun()
+
+# For Advanced mode, add password protection
+if mode == "Advanced (Emotion Detection)":
+    adv_password = st.sidebar.text_input("Enter password for advanced mode", type="password")
+    if adv_password != "advanced123":
+        st.sidebar.error("Incorrect password. Advanced mode is locked.")
+        # Force fallback to Basic mode by setting mode and clearing cache
+        mode = "Basic (Sentiment Analysis)"
+        st.sidebar.warning("Switching to Basic mode.")
+        st.cache_resource.clear()
+        st.session_state.last_mode = mode
+        st.experimental_rerun()
 
 # If advanced mode, inject additional CSS and add a class to the body via JS
 if mode == "Advanced (Emotion Detection)":
@@ -119,7 +146,7 @@ if mode == "Advanced (Emotion Detection)":
         except Exception as e:
             st.sidebar.error(f"Error fetching emotion classes: {e}")
 
-# Main UI: text input for sentiment prediction
+# Main UI: text input for analysis
 user_input = st.text_area("Enter text for analysis:")
 
 if st.button("Analyze"):
