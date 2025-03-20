@@ -1,8 +1,8 @@
 import streamlit as st
 from transformers import pipeline
 
-# Inject custom CSS for a clean, modern, and rich look
-custom_css = """
+# Base custom CSS for a clean, modern look
+base_css = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
@@ -10,6 +10,7 @@ body {
     font-family: 'Roboto', sans-serif;
     background-color: #f4f7f6;
     color: #2E4053;
+    transition: background-color 0.5s ease-in-out;
 }
 
 h1 {
@@ -17,12 +18,14 @@ h1 {
     font-weight: 700;
     text-align: center;
     margin-bottom: 0.5rem;
+    transition: color 0.5s ease-in-out;
 }
 
 h3 {
     text-align: center;
     color: #2E4053;
     margin-bottom: 2rem;
+    transition: opacity 0.5s ease-in-out;
 }
 
 .stButton>button {
@@ -33,6 +36,11 @@ h3 {
     padding: 10px 24px;
     font-size: 1rem;
     font-weight: 600;
+    transition: background-color 0.3s ease;
+}
+
+.stButton>button:hover {
+    background-color: #1b4f72;
 }
 
 .stTextInput>div>div>input, 
@@ -44,10 +52,38 @@ h3 {
 }
 </style>
 """
-st.markdown(custom_css, unsafe_allow_html=True)
+st.markdown(base_css, unsafe_allow_html=True)
+
+# Advanced mode additional CSS
+advanced_css = """
+<style>
+body.advanced-mode {
+    background-color: #e8f0fe;
+}
+.fade-in {
+    animation: fadeIn 1s ease-in-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+</style>
+"""
 
 # Sidebar: select mode (Basic vs. Advanced)
 mode = st.sidebar.radio("Select Mode", ["Basic (Sentiment Analysis)", "Advanced (Emotion Detection)"])
+
+# If advanced mode, inject additional CSS and add a class to the body via JS
+if mode == "Advanced (Emotion Detection)":
+    st.markdown(advanced_css, unsafe_allow_html=True)
+    st.markdown(
+        """
+        <script>
+        document.body.classList.add("advanced-mode");
+        </script>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # Load the appropriate sentiment analysis pipeline based on the mode
 @st.cache_resource(show_spinner=False)
@@ -65,8 +101,11 @@ def load_pipeline(selected_mode):
 
 sentiment_pipeline, used_model = load_pipeline(mode)
 
-# Display current mode in the title
-st.markdown(f"<h1>SentiAnalyze: {mode}</h1>", unsafe_allow_html=True)
+# Display current mode in the title with an animated header in advanced mode
+if mode == "Advanced (Emotion Detection)":
+    st.markdown("<h1 class='fade-in'>SentiAnalyze: Advanced Emotion Detection</h1>", unsafe_allow_html=True)
+else:
+    st.markdown("<h1>SentiAnalyze: Basic Sentiment Analysis</h1>", unsafe_allow_html=True)
 st.markdown("<h3>Analyze sentiment with style and precision</h3>", unsafe_allow_html=True)
 
 # In Advanced mode, offer a button to display available emotion classes
